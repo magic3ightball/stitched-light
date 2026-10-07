@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stitched Light — 조각보 빛</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Anthropic Brand Colors */
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar h1 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .sidebar .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        .cloth-status {
+            color: var(--anthropic-orange);
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: -22px;
+            margin-bottom: 32px;
+        }
+
+        /* Control Sections */
+        .control-section {
+            margin-bottom: 32px;
+        }
+
+        .control-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: '•';
+            color: var(--anthropic-orange);
+            font-weight: bold;
+        }
+
+        /* Seed Controls */
+        .seed-input {
+            width: 100%;
+            background: var(--anthropic-light);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--anthropic-light-gray);
+            text-align: center;
+        }
+
+        .seed-input:focus {
+            outline: none;
+            border-color: var(--anthropic-orange);
+            box-shadow: 0 0 0 2px rgba(217, 119, 87, 0.1);
+            background: white;
+        }
+
+        .seed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .regen-button {
+            margin-bottom: 0;
+        }
+
+        /* Parameter Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #c86641;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .value-display {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Color Pickers */
+        .color-group {
+            margin-bottom: 16px;
+        }
+
+        .color-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+            margin-bottom: 4px;
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-picker-container input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+
+        .color-value {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Buttons */
+        .button {
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .button:hover {
+            background: #c86641;
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: var(--anthropic-blue);
+        }
+
+        .button.secondary:hover {
+            background: #5a8bb8;
+        }
+
+        .button.tertiary {
+            background: var(--anthropic-green);
+        }
+
+        .button.tertiary:hover {
+            background: #6b7b52;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row .button {
+            flex: 1;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        #canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(20, 20, 19, 0.1);
+            background: white;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+            cursor: pointer;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--anthropic-mid-gray);
+        }
+
+        /* Responsive - Stack on mobile */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .canvas-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Sidebar -->
+        <div class="sidebar">
+            <h1>Stitched Light</h1>
+            <div class="subtitle">조각보 빛 — 마우스로 해를 끌고 다니고, 드래그로 바람을 일으키고, <b>클릭해서 조각을 뜯어보세요.</b> 다 뜯으면 새 조각보가 도착합니다.</div>
+            <div class="cloth-status" id="cloth-status">…</div>
+
+            <!-- Seed Section -->
+            <div class="control-section">
+                <h3>Seed</h3>
+                <input type="number" id="seed-input" class="seed-input" value="7134" onchange="updateSeed()">
+                <div class="seed-controls">
+                    <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                    <button class="button secondary" onclick="nextSeed()">Next →</button>
+                </div>
+                <button class="button tertiary regen-button" onclick="randomSeedAndUpdate()">↻ Random</button>
+            </div>
+
+            <!-- Parameters Section -->
+            <div class="control-section">
+                <h3>Parameters</h3>
+
+                <div class="control-group">
+                    <label>Patch Density</label>
+                    <div class="slider-container">
+                        <input type="range" id="maxDepth" min="3" max="8" step="1" value="6" oninput="updateParam('maxDepth', this.value)">
+                        <span class="value-display" id="maxDepth-value">6</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Split Chance</label>
+                    <div class="slider-container">
+                        <input type="range" id="splitChance" min="0.50" max="0.98" step="0.02" value="0.82" oninput="updateParam('splitChance', this.value)">
+                        <span class="value-display" id="splitChance-value">0.82</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Seam Width</label>
+                    <div class="slider-container">
+                        <input type="range" id="seamWidth" min="0" max="12" step="0.5" value="5" oninput="updateParam('seamWidth', this.value)">
+                        <span class="value-display" id="seamWidth-value">5</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Hand Wobble</label>
+                    <div class="slider-container">
+                        <input type="range" id="wobble" min="0" max="8" step="0.5" value="3.5" oninput="updateParam('wobble', this.value)">
+                        <span class="value-display" id="wobble-value">3.5</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Sheerness</label>
+                    <div class="slider-container">
+                        <input type="range" id="sheerness" min="20" max="95" step="1" value="62" oninput="updateParam('sheerness', this.value)">
+                        <span class="value-display" id="sheerness-value">62</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Wind Strength</label>
+                    <div class="slider-container">
+                        <input type="range" id="windStrength" min="4" max="40" step="1" value="16" oninput="updateParam('windStrength', this.value)">
+                        <span class="value-display" id="windStrength-value">16</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Light Drift</label>
+                    <div class="slider-container">
+                        <input type="range" id="lightDrift" min="0" max="2" step="0.1" value="0.6" oninput="updateParam('lightDrift', this.value)">
+                        <span class="value-display" id="lightDrift-value">0.6</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colors Section -->
+            <div class="control-section">
+                <h3>Colors</h3>
+
+                <div class="color-group">
+                    <label>Persimmon (감)</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color1" value="#c96a4a" onchange="updateColor(0, this.value)">
+                        <span class="color-value" id="color1-value">#c96a4a</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Jade (옥)</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color2" value="#6e8f7c" onchange="updateColor(1, this.value)">
+                        <span class="color-value" id="color2-value">#6e8f7c</span>
+                    </div>
+                </div>
+
+                <div class="color-group">
+                    <label>Indigo (쪽)</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="color3" value="#56679b" onchange="updateColor(2, this.value)">
+                        <span class="color-value" id="color3-value">#56679b</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="control-section">
+                <h3>Actions</h3>
+                <div class="button-row" style="margin-bottom: 8px;">
+                    <button class="button" onclick="regenerate()">🪡 Re-sew</button>
+                    <button class="button secondary" onclick="resetParameters()">Reset</button>
+                </div>
+                <button class="button tertiary" onclick="downloadPNG()">↓ Download PNG</button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="canvas-area">
+            <div id="canvas-container">
+                <div class="loading">Piecing the cloth...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // STITCHED LIGHT (조각보 빛) — parameters
+        // ═══════════════════════════════════════════════════════════════════════
+
+        let params = {
+            seed: 7134,
+            maxDepth: 6,        // recursion depth of the subdivision
+            splitChance: 0.82,  // probability a panel is cut again
+            seamWidth: 5,       // gap between patches (the seam allowance)
+            wobble: 3.5,        // hand-cut edge deviation, px
+            sheerness: 62,      // fabric translucency, %
+            windStrength: 16,   // gust ripple amplitude when dragging
+            lightDrift: 0.6,    // speed of the sun when the mouse is away
+            colorPalette: ['#c96a4a', '#6e8f7c', '#56679b']
+        };
+
+        let defaultParams = JSON.parse(JSON.stringify(params));
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // ALGORITHM — recursive patchwork subdivision, lit from behind,
+        // torn apart by hand, rippled by wind
+        // ═══════════════════════════════════════════════════════════════════════
+
+        const CANVAS = 1200;
+        const MARGIN = 42;
+        const MIN_CELL = 58;
+        // near-half and golden-section cuts; the fold ratios of the workshop
+        const CUT_RATIOS = [0.382, 0.5, 0.618];
+
+        let patches = [];
+        let gusts = [];        // wind ripples from dragging / tearing
+        let lightPhase0 = 0;   // where the sun starts for this seed
+        let timeBase = 0;      // accumulated light time
+        let lastMillis = 0;
+        let lightX = CANVAS / 2, lightY = CANVAS / 2;
+        let allGoneAt = 0;     // when the last patch fluttered away
+        let lastGustAt = 0;
+
+        function setup() {
+            let canvas = createCanvas(CANVAS, CANVAS);
+            canvas.parent('canvas-container');
+            pixelDensity(1.5);
+            initializeSystem();
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        function initializeSystem() {
+            randomSeed(params.seed);
+            noiseSeed(params.seed);
+
+            patches = [];
+            gusts = [];
+            allGoneAt = 0;
+            subdivide(MARGIN, MARGIN, width - 2 * MARGIN, height - 2 * MARGIN, 0);
+            lightPhase0 = random(TWO_PI);
+            const t = lightPhase0 + timeBase;
+            lightX = width / 2 + cos(t) * width * 0.34;
+            lightY = height / 2 + sin(t * 0.73) * height * 0.34;
+            updateStatus();
+        }
+
+        function subdivide(x, y, w, h, depth) {
+            const canSplit = w > MIN_CELL * 1.9 || h > MIN_CELL * 1.9;
+            const mustSplit = depth < 2; // always at least a few panels
+            if (!canSplit || depth >= params.maxDepth ||
+                (!mustSplit && random() > params.splitChance)) {
+                patches.push(makePatch(x, y, w, h, depth));
+                return;
+            }
+
+            // cut along the longer axis, at a resonant ratio, hand-jittered
+            let vertical;
+            if (w > h * 1.15) vertical = true;
+            else if (h > w * 1.15) vertical = false;
+            else vertical = random() < 0.5;
+
+            let r = CUT_RATIOS[floor(random(CUT_RATIOS.length))] + random(-0.05, 0.05);
+            r = constrain(r, 0.28, 0.72);
+
+            if (vertical) {
+                const cut = w * r;
+                if (cut < MIN_CELL || w - cut < MIN_CELL) {
+                    patches.push(makePatch(x, y, w, h, depth));
+                    return;
+                }
+                subdivide(x, y, cut, h, depth + 1);
+                subdivide(x + cut, y, w - cut, h, depth + 1);
+            } else {
+                const cut = h * r;
+                if (cut < MIN_CELL || h - cut < MIN_CELL) {
+                    patches.push(makePatch(x, y, w, h, depth));
+                    return;
+                }
+                subdivide(x, y, w, cut, depth + 1);
+                subdivide(x, y + cut, w, h - cut, depth + 1);
+            }
+        }
+
+        function makePatch(x, y, w, h, depth) {
+            const ivory = random() < 0.13; // undyed ramie scraps
+            const colIdx = floor(random(3));
+            // tonal families: full dye, washed, faded, near-ivory
+            const tintSteps = [0.0, 0.2, 0.42, 0.66];
+            const tint = ivory ? 0.9 : tintSteps[floor(random(tintSteps.length))];
+            return {
+                x, y, w, h, depth,
+                colIdx,
+                tint,
+                crease: random() < 0.18,            // a remembered fold
+                creaseDir: random() < 0.5 ? 1 : -1,
+                creasePos: random(0.3, 0.7),
+                noiseOff: random(1000),
+                attached: true,
+                gone: false
+            };
+        }
+
+        // ── drawing ────────────────────────────────────────────────────────────
+
+        function draw() {
+            const now = millis();
+            timeBase += (now - lastMillis) * 0.00006 * params.lightDrift;
+            lastMillis = now;
+            const t = lightPhase0 + timeBase;
+
+            // the sun drifts on its own, but follows the mouse over the cloth
+            const orbitX = width / 2 + cos(t) * width * 0.34;
+            const orbitY = height / 2 + sin(t * 0.73) * height * 0.34;
+            const mouseOver = mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height;
+            lightX = lerp(lightX, mouseOver ? mouseX : orbitX, 0.07);
+            lightY = lerp(lightY, mouseOver ? mouseY : orbitY, 0.07);
+
+            background(246, 240, 228);
+            drawLightDisc(lightX, lightY);
+
+            gusts = gusts.filter(g => now - g.t0 < 2200);
+
+            const alphaVal = map(params.sheerness, 20, 95, 232, 96);
+            let anyLeft = false;
+
+            for (const p of patches) {
+                if (p.gone) continue;
+                if (p.attached) {
+                    anyLeft = true;
+                    const pts = buildPoly(p, params.seamWidth / 2, params.wobble, now);
+                    const c = patchColor(p, p.x + p.w / 2, p.y + p.h / 2, alphaVal);
+                    noStroke();
+                    fill(c);
+                    beginShape();
+                    for (const [px, py] of pts) vertex(px, py);
+                    endShape(CLOSE);
+                    if (p.crease) drawCrease(p);
+                    drawStitches(pts);
+                } else {
+                    drawHole(p);
+                    updateAndDrawFalling(p, now, alphaVal);
+                    if (!p.gone) anyLeft = true;
+                }
+            }
+
+            drawVignette();
+
+            // when the last scrap flutters away, a fresh bojagi arrives
+            if (!anyLeft && patches.length) {
+                if (!allGoneAt) allGoneAt = now;
+                else if (now - allGoneAt > 900) {
+                    params.seed = params.seed + 1;
+                    updateSeedDisplay();
+                    initializeSystem();
+                }
+            } else {
+                allGoneAt = 0;
+            }
+        }
+
+        function patchColor(p, cx, cy, alphaVal) {
+            const ivoryCol = color(244, 238, 224);
+            const warmLight = color(255, 240, 205);
+            const coolShadow = color(70, 76, 100);
+            let base = lerpColor(color(params.colorPalette[p.colIdx]), ivoryCol, p.tint);
+            const d = dist(cx, cy, lightX, lightY);
+            const glow = pow(constrain(1 - d / (width * 1.15), 0, 1), 1.6);
+            let c = lerpColor(base, warmLight, glow * 0.38);
+            c = lerpColor(c, coolShadow, (1 - glow) * 0.10);
+            c.setAlpha(alphaVal);
+            return c;
+        }
+
+        // ripples from drag-gusts, radiating outward and fading
+        function gustOffset(px, py, now) {
+            let o = 0;
+            for (const g of gusts) {
+                const d = dist(px, py, g.x, g.y);
+                const age = (now - g.t0) * 0.001;
+                o += g.str * Math.sin(d * 0.025 - age * 14)
+                   * Math.exp(-age * 2.2) * Math.exp(-d * 0.0025);
+            }
+            return o;
+        }
+
+        // wobbly hand-cut outline; displacement tapers to zero at corners
+        function buildPoly(p, inset, wob, now) {
+            const x0 = p.x + inset, y0 = p.y + inset;
+            const x1 = p.x + p.w - inset, y1 = p.y + p.h - inset;
+            const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+            const pts = [];
+            const windy = gusts.length > 0;
+            for (let e = 0; e < 4; e++) {
+                const [ax, ay] = corners[e];
+                const [bx, by] = corners[(e + 1) % 4];
+                const len = dist(ax, ay, bx, by);
+                const steps = max(2, floor(len / 18));
+                const nx = (by - ay) / len, ny = -(bx - ax) / len;
+                for (let i = 0; i < steps; i++) {
+                    const tt = i / steps;
+                    const px = lerp(ax, bx, tt), py = lerp(ay, by, tt);
+                    let dsp = (noise(px * 0.013, py * 0.013, p.noiseOff) - 0.5) * 2 * wob;
+                    if (windy) dsp += gustOffset(px, py, now);
+                    dsp *= Math.sin(tt * Math.PI);
+                    pts.push([px + nx * dsp, py + ny * dsp]);
+                }
+            }
+            return pts;
+        }
+
+        // running stitch along the seams
+        function drawStitches(pts) {
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.setLineDash([5, 6]);
+            stroke(72, 60, 48, 80);
+            strokeWeight(1.1);
+            noFill();
+            beginShape();
+            for (const [px, py] of pts) vertex(px, py);
+            endShape(CLOSE);
+            ctx.restore();
+        }
+
+        // the ghost of a fold: a faint diagonal band of caught light
+        function drawCrease(p) {
+            const d = dist(p.x + p.w / 2, p.y + p.h / 2, lightX, lightY);
+            const glow = pow(constrain(1 - d / (width * 1.15), 0, 1), 1.6);
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(p.x + 2, p.y + 2, p.w - 4, p.h - 4);
+            ctx.clip();
+
+            const bw = Math.min(p.w, p.h) * 0.16;
+            const cx = p.x + p.w * p.creasePos;
+            noStroke();
+            fill(255, 252, 244, 22 + glow * 26);
+            if (p.creaseDir > 0) {
+                quad(cx - bw, p.y, cx + bw, p.y,
+                     cx + bw + p.h * 0.2, p.y + p.h, cx - bw + p.h * 0.2, p.y + p.h);
+            } else {
+                quad(cx - bw, p.y + p.h, cx + bw, p.y + p.h,
+                     cx + bw - p.h * 0.2, p.y, cx - bw - p.h * 0.2, p.y);
+            }
+            ctx.restore();
+        }
+
+        // where a patch was torn away: bare backing cloth and snapped threads
+        function drawHole(p) {
+            const inset = params.seamWidth / 2;
+            noStroke();
+            fill(236, 227, 209, 200);
+            rect(p.x + inset, p.y + inset, p.w - inset * 2, p.h - inset * 2, 3);
+
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.setLineDash([4, 7]);
+            stroke(120, 96, 72, 70);
+            strokeWeight(1);
+            noFill();
+            rect(p.x + inset, p.y + inset, p.w - inset * 2, p.h - inset * 2, 3);
+            ctx.restore();
+
+            // dangling snapped threads, deterministic per patch
+            stroke(150, 84, 56, 110);
+            strokeWeight(1.2);
+            noFill();
+            const n = 2 + Math.floor((p.noiseOff * 7) % 3);
+            for (let i = 0; i < n; i++) {
+                const tx = p.x + inset + ((p.noiseOff * (i + 3) * 137) % (p.w - inset * 2));
+                const ty = (Math.floor(p.noiseOff * (i + 1)) % 2 === 0) ? p.y + inset : p.y + p.h - inset;
+                const dir = ty === p.y + inset ? 1 : -1;
+                bezier(tx, ty, tx + 6, ty + dir * 8, tx - 5, ty + dir * 14, tx + 3, ty + dir * 20);
+            }
+        }
+
+        // a torn patch flutters down like a scrap of paper-backed silk
+        function updateAndDrawFalling(p, now, alphaVal) {
+            p.vy = Math.min(p.vy + 0.12, 6);
+            p.cx += p.vx + Math.sin(now * 0.003 + p.sway) * 1.7;
+            p.cy += p.vy;
+            p.ang += p.angV + Math.sin(now * 0.002 + p.sway) * 0.004;
+            p.vx *= 0.99;
+
+            if (p.cy - Math.max(p.w, p.h) > height + 120) {
+                p.gone = true;
+                return;
+            }
+
+            const c = patchColor(p, p.cx, p.cy, alphaVal);
+            push();
+            translate(p.cx, p.cy);
+            rotate(p.ang);
+            // flutter: squash horizontally as it turns, like cloth catching air
+            scale(1, 0.85 + 0.15 * Math.sin(now * 0.004 + p.sway));
+            noStroke();
+            fill(c);
+            beginShape();
+            for (const [px, py] of p.frozenPts) vertex(px, py);
+            endShape(CLOSE);
+            const ctx = drawingContext;
+            ctx.save();
+            ctx.setLineDash([5, 6]);
+            stroke(72, 60, 48, 60);
+            strokeWeight(1.1);
+            noFill();
+            beginShape();
+            for (const [px, py] of p.frozenPts) vertex(px, py);
+            endShape(CLOSE);
+            ctx.restore();
+            pop();
+        }
+
+        function drawLightDisc(lx, ly) {
+            const ctx = drawingContext;
+            const g = ctx.createRadialGradient(lx, ly, 40, lx, ly, width * 0.75);
+            g.addColorStop(0, 'rgba(255, 236, 190, 0.85)');
+            g.addColorStop(0.5, 'rgba(255, 240, 210, 0.30)');
+            g.addColorStop(1, 'rgba(255, 244, 224, 0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function drawVignette() {
+            const ctx = drawingContext;
+            const g = ctx.createRadialGradient(width / 2, height / 2, width * 0.45,
+                                               width / 2, height / 2, width * 0.78);
+            g.addColorStop(0, 'rgba(46, 40, 34, 0)');
+            g.addColorStop(1, 'rgba(46, 40, 34, 0.14)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        // ── interaction: tear, gust ─────────────────────────────────────────────
+
+        function mousePressed() {
+            if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
+            for (let i = patches.length - 1; i >= 0; i--) {
+                const p = patches[i];
+                if (p.attached &&
+                    mouseX >= p.x && mouseX <= p.x + p.w &&
+                    mouseY >= p.y && mouseY <= p.y + p.h) {
+                    tearPatch(p);
+                    break;
+                }
+            }
+        }
+
+        function tearPatch(p) {
+            p.attached = false;
+            const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+            p.frozenPts = buildPoly(p, params.seamWidth / 2, params.wobble, millis())
+                .map(([px, py]) => [px - cx, py - cy]);
+            p.cx = cx;
+            p.cy = cy;
+            p.vx = (mouseX - pmouseX) * 0.2 + (Math.random() - 0.5) * 1.4;
+            p.vy = -2.4 - Math.random() * 2.2; // pops up before it falls
+            p.ang = 0;
+            p.angV = (Math.random() - 0.5) * 0.07;
+            p.sway = Math.random() * Math.PI * 2;
+            gusts.push({ x: cx, y: cy, t0: millis(), str: params.windStrength * 0.7 });
+            updateStatus();
+        }
+
+        function mouseDragged() {
+            if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
+            const now = millis();
+            if (now - lastGustAt > 70) {
+                lastGustAt = now;
+                gusts.push({ x: mouseX, y: mouseY, t0: now, str: params.windStrength });
+                if (gusts.length > 12) gusts.shift();
+            }
+        }
+
+        function updateStatus() {
+            const n = patches.filter(q => q.attached).length;
+            const el = document.getElementById('cloth-status');
+            if (el) el.textContent = '남은 조각 ' + n + '개 — 다 뜯으면 새 조각보가 와요';
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // UI CONTROL HANDLERS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        const STRUCTURAL = ['maxDepth', 'splitChance'];
+
+        function updateParam(name, value) {
+            params[name] = parseFloat(value);
+            document.getElementById(name + '-value').textContent = value;
+            if (STRUCTURAL.includes(name)) initializeSystem();
+        }
+
+        function updateColor(idx, value) {
+            params.colorPalette[idx] = value;
+            document.getElementById('color' + (idx + 1) + '-value').textContent = value;
+        }
+
+        function regenerate() {
+            initializeSystem();
+        }
+
+        function downloadPNG() {
+            saveCanvas('stitched-light-seed-' + params.seed, 'png');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SEED CONTROL FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function updateSeedDisplay() {
+            document.getElementById('seed-input').value = params.seed;
+        }
+
+        function updateSeed() {
+            let input = document.getElementById('seed-input');
+            let newSeed = parseInt(input.value);
+            if (newSeed && newSeed > 0) {
+                params.seed = newSeed;
+                initializeSystem();
+            } else {
+                updateSeedDisplay();
+            }
+        }
+
+        function previousSeed() {
+            params.seed = Math.max(1, params.seed - 1);
+            updateSeedDisplay();
+            initializeSystem();
+        }
+
+        function nextSeed() {
+            params.seed = params.seed + 1;
+            updateSeedDisplay();
+            initializeSystem();
+        }
+
+        function randomSeedAndUpdate() {
+            params.seed = Math.floor(Math.random() * 999999) + 1;
+            updateSeedDisplay();
+            initializeSystem();
+        }
+
+        function resetParameters() {
+            params = JSON.parse(JSON.stringify(defaultParams));
+
+            for (const name of ['maxDepth', 'splitChance', 'seamWidth', 'wobble', 'sheerness', 'windStrength', 'lightDrift']) {
+                document.getElementById(name).value = params[name];
+                document.getElementById(name + '-value').textContent = params[name];
+            }
+            for (let i = 0; i < 3; i++) {
+                document.getElementById('color' + (i + 1)).value = params.colorPalette[i];
+                document.getElementById('color' + (i + 1) + '-value').textContent = params.colorPalette[i];
+            }
+
+            updateSeedDisplay();
+            initializeSystem();
+        }
+
+        window.addEventListener('load', function() {
+            updateSeedDisplay();
+        });
+    </script>
+</body>
+</html>
